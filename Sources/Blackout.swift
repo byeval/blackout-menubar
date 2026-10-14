@@ -146,7 +146,9 @@ private final class BlackoutApp: NSObject, NSApplicationDelegate {
 
         if loadSnapshot() != nil { retryRestore(nil) }
 
-        if let argument = CommandLine.arguments.first(where: { $0.hasPrefix("--demo-seconds=") }),
+        if CommandLine.arguments.contains("--start-blackout") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.enterBlackout(nil) }
+        } else if let argument = CommandLine.arguments.first(where: { $0.hasPrefix("--demo-seconds=") }),
            let seconds = TimeInterval(argument.dropFirst("--demo-seconds=".count)), seconds > 0 {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1) { self.enterBlackout(nil) }
             DispatchQueue.main.asyncAfter(deadline: .now() + seconds + 1) { self.restoreDisplay(nil) }

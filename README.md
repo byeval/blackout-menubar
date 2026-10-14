@@ -23,6 +23,10 @@ The release is ad hoc signed and **not notarized**. Gatekeeper may block a downl
 
 Click the moon in the menu bar and select “进入黑屏低亮度” to enter blackout. Click any black screen or press `Control-Option-Command-B` to restore. The menu also offers Restore and Quit. Choose 1%, 5%, or 10% brightness (5% by default). Displays without working hardware brightness control are still covered by the black overlay.
 
+需要远程启动黑屏时，可先退出已有的 Blackout 进程，再运行 `open /Applications/Blackout.app --args --start-blackout`（若安装在用户目录，请改用对应路径）。此参数只在启动新进程时生效；恢复方式不变。
+
+To enter blackout on launch, quit any existing Blackout process, then run `open /Applications/Blackout.app --args --start-blackout` (adjust the path if needed). The argument applies only when a new process starts. Restore by clicking the black screen or using the hotkey.
+
 ## 构建 / Build
 
 安装 Xcode 后，在 Apple Silicon Mac 上运行：
