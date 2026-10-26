@@ -16,16 +16,18 @@ The release is ad hoc signed and **not notarized**. Gatekeeper may block a downl
 
 ## 使用 / Use
 
-- 点击菜单栏月亮图标，选择“进入黑屏低亮度”。
-- 点击任一黑屏，或按 `Control-Option-Command-B`，即可关闭遮罩并恢复进入前记录的亮度。菜单里也有“恢复显示”和“退出”。
-- 菜单中可选 1%、5% 或 10% 的目标亮度，默认 5%。
-- 如果显示器无法通过硬件接口读取亮度，程序仍会显示黑色遮罩，并在菜单中提示硬件调光不可用。
+- 点击菜单栏月亮图标，直接拖动每块显示器的亮度滑杆（1–100%）。更改立即发送到对应显示器，不需要进入黑屏。快速拖动会合并尚未执行的请求，避免积压。
+- 每块屏幕显示硬件实际读数。写入后会读回确认，状态显示“已确认”；失败或无法读回时会明确提示，不将目标数字当作成功结果。打开菜单或点击“重新读取亮度”可更新读数。
+- “黑屏目标亮度”单独设置为 1%、5%、10% 或 20%，仅下次进入黑屏时使用，不改变日常亮度。所有显示器使用同一黑屏目标值。
+- 选择“进入黑屏低亮度”后覆盖所有屏幕，并尽可能降低硬件亮度。点击任一黑屏、按任意普通按键，或按 `Control-Option-Command-B` 可恢复进入前的各屏亮度；此组合键也可进入黑屏。
+- 无法读取硬件亮度的屏幕会禁用滑杆，但仍可使用黑屏遮罩。当前版本不提供日常软件调暗。
+- 普通亮度调整会保留；退出或从黑屏恢复只撤销黑屏期间的调暗，不撤销之前的日常调整。
 
-Click the moon in the menu bar and select “进入黑屏低亮度” to enter blackout. Click any black screen or press `Control-Option-Command-B` to restore. The menu also offers Restore and Quit. Choose 1%, 5%, or 10% brightness (5% by default). Displays without working hardware brightness control are still covered by the black overlay.
+Open the moon menu and drag each display's brightness slider (1–100%). Changes apply immediately and are confirmed by hardware readback. Blackout brightness is a separate preset used only when entering blackout. Click a black screen or press Control-Option-Command-B to restore the pre-blackout brightness of every display. Unsupported hardware controls are disabled; the black overlay still works. Ordinary brightness changes remain in effect when quitting.
 
-需要远程启动黑屏时，可先退出已有的 Blackout 进程，再运行 `open /Applications/Blackout.app --args --start-blackout`（若安装在用户目录，请改用对应路径）。此参数只在启动新进程时生效；恢复方式不变。
+需要远程启动黑屏时，先退出已有 Blackout，再运行 `open /Applications/Blackout.app --args --start-blackout`（若安装在用户目录，请改用对应路径）。恢复方式不变。App 和恢复命令共用进程锁，避免两份程序同时控制屏幕或覆盖恢复记录。
 
-To enter blackout on launch, quit any existing Blackout process, then run `open /Applications/Blackout.app --args --start-blackout` (adjust the path if needed). The argument applies only when a new process starts. Restore by clicking the black screen or using the hotkey.
+To enter blackout on launch, quit any existing copy, then run `open /Applications/Blackout.app --args --start-blackout` (adjust the path if needed).
 
 ## 构建 / Build
 
@@ -42,19 +44,30 @@ With Xcode installed on an Apple Silicon Mac, run the commands above. `./package
 
 ## 恢复与诊断 / Recovery and diagnostics
 
-程序异常退出后再次启动，会尝试恢复保存的亮度。如果没有自动恢复，请在终端运行：
+程序正常退出或收到终止信号时会先尝试恢复。异常退出后再次启动，也会尝试恢复保存的亮度。恢复使用显示器 UUID 识别屏幕；重新连接后即使数字 ID 改变，也可匹配原屏幕。1.0 的旧记录仍可读取，但只能按旧数字 ID 恢复。
+
+每块屏幕只有在读回确认成功后才从恢复记录中移除；未连接或恢复失败的屏幕会继续保留。存在未完成的记录时，会阻止新黑屏和日常调光，避免覆盖原值。连接恢复或系统唤醒后会重试，菜单也提供“重试恢复未完成的屏幕”。损坏的记录不会被静默删除或覆盖。
+
+若需手动恢复，先退出 Blackout，再运行：
 
 ```sh
 /Applications/Blackout.app/Contents/MacOS/Blackout --restore
 ```
 
-如果 App 位于其他位置，请相应修改路径。`--diagnose` 只读取当前可用的硬件亮度和显示器 ID，不会进入黑屏或更改亮度。亮度快照位于 `~/Library/Application Support/BlackoutMenubar/brightness.json`；若显示器暂时断开，保留该文件，重新连接后再运行 `--restore`。
+`--diagnose` 只读取硬件亮度与显示器标识，不会黑屏或更改亮度，可在 App 运行时使用。`--verify-brightness` 是显式硬件检查：需要先退出 App；保存当前各屏亮度，短暂调整约 5 个百分点，读回确认，再恢复并确认。检查中断后可用 `--restore` 恢复。
 
-After an unexpected exit, relaunching attempts to restore the saved brightness. Run the command above to retry manually (adjust the app path if needed). `--diagnose` only reads available display brightness values and IDs. If a display is disconnected, reconnect it before retrying `--restore`; the snapshot remains in the Application Support path above until restoration succeeds.
+恢复记录：`~/Library/Application Support/BlackoutMenubar/brightness.json`。屏幕未连接时保留该文件，连接后重试。新版本会迁移本机旧版 `local.xuhong.blackout` 的黑屏目标设置。
+
+Recovery snapshots use stable display UUIDs. Successfully verified displays are removed individually; disconnected or failed displays remain pending. Relaunching, reconnecting, or waking retries recovery. An unresolved or corrupt journal blocks new brightness writes and blackout sessions. Quit the app before CLI recovery or the explicit `--verify-brightness` hardware check. Read-only `--diagnose` is safe while the app is running.
+
+### 本地检查 / Local checks
+
+`swift test` 使用临时目录与模拟读回检查恢复逻辑，不会调整真实显示器。真实硬件检查使用上面的显式命令。自动化通过不等于滑杆交互、黑屏覆盖和肉眼亮度效果已通过实机验收。
 
 ## 工作边界 / Limitations
 
 - 外接显示器必须支持并启用 DDC/CI，且连接链路必须传递 DDC 信号，硬件亮度调节才可用。黑色遮罩仍会覆盖不支持调光的显示器。液晶屏背光保持开启时可能有漏光。
+- “硬件亮度已确认”仅表示亮度数值已读回，不表示显示器自己的提示已被确认。Dell U2720QM 超过默认亮度时可能出现功耗确认提示；本版本不支持读取或自动确认该提示，需要使用显示器实体按键处理。
 - 内建屏幕使用 macOS 私有 DisplayServices 接口；外接 DDC 调节使用私有 IOAVService 通道。系统更新可能使其失效。
 - 保持显示器唤醒的请求不等于阻止系统睡眠；合盖、锁屏或系统电源策略可能改变显示状态。
 

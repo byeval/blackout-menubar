@@ -14,7 +14,7 @@ make -C Vendor/m1ddc binary
 
 app="${PWD}/build/Blackout.app"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Helpers"
-swiftc -swift-version 5 -O -target arm64-apple-macosx13.0 Sources/Blackout.swift \
+swiftc -swift-version 5 -O -target arm64-apple-macosx13.0 Sources/Core/*.swift Sources/Blackout.swift \
   -framework AppKit -framework Carbon -framework IOKit \
   -o "$app/Contents/MacOS/Blackout"
 cp Vendor/m1ddc/m1ddc "$app/Contents/Helpers/m1ddc"

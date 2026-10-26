@@ -1,4 +1,5 @@
 build/
 dist/
+.build/
 Vendor/m1ddc/.objects/
 Vendor/m1ddc/m1ddc

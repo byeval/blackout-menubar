@@ -16,6 +16,8 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      - name: Test recovery and brightness confirmation
+        run: swift test
       - name: Build and package
         run: ./package.sh
       - name: Verify architecture and deployment target
@@ -40,4 +42,5 @@ jobs:
         run: |
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Info.plist)
           test "$GITHUB_REF_NAME" = "v$version"
-          gh release create "$GITHUB_REF_NAME" dist/*.zip dist/SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file RELEASE_NOTES.md --verify-tag
+          awk '/^# Blackout / { if (seen++) exit } { print }' RELEASE_NOTES.md > dist/release-notes.md
+          gh release create "$GITHUB_REF_NAME" "dist/Blackout-v${version}-macos-arm64.zip" dist/SHA256SUMS --title "$GITHUB_REF_NAME" --notes-file dist/release-notes.md --verify-tag
